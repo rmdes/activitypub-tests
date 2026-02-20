@@ -7,6 +7,9 @@ BASE_URL="https://${DOMAIN}"
 ACTOR_URL="${BASE_URL}/activitypub/users/${HANDLE}"
 MOUNT_PATH="/activitypub"
 
+# Test result tracking (used by run-all.sh report generator)
+_TEST_DETAILS=""
+
 # assert_contains <haystack> <needle> <message>
 assert_contains() {
   if echo "$1" | grep -qF "$2"; then
@@ -16,6 +19,17 @@ assert_contains() {
     echo "  Expected to contain: $2"
     echo "  Got: $(echo "$1" | head -5)"
     return 1
+  fi
+}
+
+# assert_not_contains <haystack> <needle> <message>
+assert_not_contains() {
+  if echo "$1" | grep -qF "$2"; then
+    echo "ASSERT FAILED: $3"
+    echo "  Expected NOT to contain: $2"
+    return 1
+  else
+    return 0
   fi
 }
 
@@ -60,4 +74,32 @@ assert_http_status() {
   local status
   status=$(curl "${curl_args[@]}")
   assert_eq "$status" "$expected" "HTTP $method $url should return $expected (got $status)"
+}
+
+# assert_json_field <json> <jq_path> <message>
+# Asserts the jq path returns a non-null, non-empty value
+assert_json_field() {
+  local json="$1"
+  local path="$2"
+  local msg="$3"
+  local val
+  val=$(echo "$json" | jq -r "$path // empty" 2>/dev/null)
+  if [[ -z "$val" ]]; then
+    echo "ASSERT FAILED: $msg"
+    echo "  jq path '$path' returned empty/null"
+    echo "  JSON (first 200 chars): $(echo "$json" | head -c 200)"
+    return 1
+  fi
+  return 0
+}
+
+# assert_json_eq <json> <jq_path> <expected> <message>
+assert_json_eq() {
+  local json="$1"
+  local path="$2"
+  local expected="$3"
+  local msg="$4"
+  local val
+  val=$(echo "$json" | jq -r "$path // empty" 2>/dev/null)
+  assert_eq "$val" "$expected" "$msg"
 }

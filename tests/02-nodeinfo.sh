@@ -3,23 +3,40 @@
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
 
-output=$(fedify nodeinfo "$DOMAIN" --raw 2>&1)
+# First check the well-known link
+wk_json=$(curl -s "${BASE_URL}/.well-known/nodeinfo")
+assert_json_field "$wk_json" '.links[0].href' \
+  "NodeInfo well-known should have a link href"
 
-assert_contains "$output" '"name": "indiekit"' \
+# Fetch the actual NodeInfo document
+output=$(curl -s -H "Accept: application/json" \
+  "$(echo "$wk_json" | jq -r '.links[0].href')")
+
+assert_json_eq "$output" '.software.name' 'indiekit' \
   "NodeInfo software name should be indiekit"
 
-assert_contains "$output" '"activitypub"' \
-  "NodeInfo protocols should include activitypub"
-
-assert_contains "$output" '"version": "2.1"' \
+assert_json_eq "$output" '.version' '2.1' \
   "NodeInfo version should be 2.1"
 
-assert_match "$output" '"localPosts": [0-9]+' \
+assert_json_field "$output" '.software.version' \
+  "NodeInfo should report a software version"
+
+assert_json_field "$output" '.usage.localPosts' \
   "NodeInfo should report localPosts count"
 
-assert_match "$output" '"total": [0-9]+' \
+assert_json_field "$output" '.usage.users.total' \
   "NodeInfo should report user totals"
 
-# Extract localPosts count for informational output
-posts=$(echo "$output" | grep -o '"localPosts": [0-9]*' | grep -o '[0-9]*')
-echo "NodeInfo OK: indiekit v1.0.0, ${posts} local posts, protocol: activitypub"
+# openRegistrations is a boolean — use tostring to avoid jq treating false as empty
+open_reg=$(echo "$output" | jq '.openRegistrations')
+assert_eq "$open_reg" "false" \
+  "NodeInfo should report openRegistrations as false"
+
+# Verify protocols include activitypub
+protocols=$(echo "$output" | jq -r '.protocols[]')
+assert_contains "$protocols" "activitypub" \
+  "NodeInfo protocols should include activitypub"
+
+version=$(echo "$output" | jq -r '.software.version')
+posts=$(echo "$output" | jq -r '.usage.localPosts')
+echo "NodeInfo OK: indiekit v${version}, ${posts} local posts, protocol: activitypub"

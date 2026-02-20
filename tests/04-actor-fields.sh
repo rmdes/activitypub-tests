@@ -30,6 +30,20 @@ assert_contains "$output" "endpoints: Endpoints" \
 assert_contains "$output" "sharedInbox:" \
   "Actor should declare a shared inbox"
 
+# New collection links (Fedify features)
+assert_contains "$output" "liked:" \
+  "Actor should have a liked collection link"
+
+assert_contains "$output" "featured:" \
+  "Actor should have a featured (pinned) collection link"
+
+assert_contains "$output" "featuredTags:" \
+  "Actor should have a featured tags collection link"
+
+# Crypto keys
+assert_contains "$output" "assertionMethods:" \
+  "Actor should have assertionMethods (multi-key support)"
+
 # Optional but important fields
 assert_contains "$output" "name:" \
   "Actor should have a display name"
@@ -40,4 +54,7 @@ assert_contains "$output" "url:" \
 assert_contains "$output" "icon:" \
   "Actor should have an icon/avatar"
 
-echo "Actor fields OK: inbox, outbox, followers, following, publicKey, sharedInbox, name, icon"
+assert_contains "$output" "published:" \
+  "Actor should have a published date"
+
+echo "Actor fields OK: inbox, outbox, followers, following, liked, featured, featuredTags, publicKey, assertionMethods, sharedInbox, name, icon, published"
