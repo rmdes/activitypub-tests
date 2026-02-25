@@ -8,10 +8,10 @@ source "$(dirname "$0")/common.sh"
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT
 fedify lookup --traverse --suppress-errors "${ACTOR_URL}/outbox" > "$tmpfile" 2>&1 || true
-outbox=$(head -40 "$tmpfile")
+outbox=$(head -600 "$tmpfile")
 
-# Extract the first Note URL from outbox (format: url: URL "https://...")
-post_url=$(echo "$outbox" | grep -o 'url: URL "[^"]*"' | head -1 | sed 's/url: URL "//;s/"$//')
+# Extract the first Note/Article URL from outbox (format: url: URL "https://...")
+post_url=$(grep -o 'url: URL "[^"]*"' <<< "$outbox" | head -1 | sed 's/url: URL "//;s/"$//')
 
 if [[ -z "$post_url" ]]; then
   echo "SKIP: Could not find a post URL in outbox"

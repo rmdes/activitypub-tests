@@ -82,6 +82,12 @@ section() {
   fi
 }
 
+# ---- Detect versions ----
+FEDIFY_CLI_VERSION=$(fedify --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || echo "unknown")
+NODEINFO_JSON=$(curl -s "https://${DOMAIN}/nodeinfo/2.1" 2>/dev/null)
+SERVER_SOFTWARE=$(jq -r '.software.name // "unknown"' <<< "$NODEINFO_JSON" 2>/dev/null || echo "unknown")
+SERVER_VERSION=$(jq -r '.software.version // "unknown"' <<< "$NODEINFO_JSON" 2>/dev/null || echo "unknown")
+
 # ====================================================================
 # RUN TESTS
 # ====================================================================
@@ -91,6 +97,8 @@ if [[ "$VERBOSE" != "--report-only" ]]; then
   echo " ActivityPub Federation Tests"
   echo " Target: ${DOMAIN} (@${HANDLE})"
   echo " Date:   ${TIMESTAMP}"
+  echo " Server: ${SERVER_SOFTWARE} ${SERVER_VERSION}"
+  echo " Fedify CLI: ${FEDIFY_CLI_VERSION}"
   echo "============================================"
 fi
 
@@ -206,8 +214,8 @@ cat > "$REPORT_FILE" << HEADER
 | **Date** | ${TIMESTAMP} |
 | **Tests** | ${TOTAL} total: ${PASS} passed, ${FAIL} failed, ${SKIP} skipped |
 | **Grade** | **${GRADE}** — ${GRADE_DESC} |
-| **Fedify** | ^1.10.3 |
-| **Software** | Indiekit + @rmdes/indiekit-endpoint-activitypub |
+| **Server** | ${SERVER_SOFTWARE} ${SERVER_VERSION} |
+| **Fedify CLI** | ${FEDIFY_CLI_VERSION} |
 
 ---
 

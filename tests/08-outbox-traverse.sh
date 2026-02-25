@@ -8,7 +8,7 @@ source "$(dirname "$0")/common.sh"
 tmpfile=$(mktemp)
 trap 'rm -f "$tmpfile"' EXIT
 fedify lookup --traverse --suppress-errors "${ACTOR_URL}/outbox" > "$tmpfile" 2>&1 || true
-output=$(head -100 "$tmpfile")
+output=$(head -600 "$tmpfile")
 
 # Should contain at least one Create activity
 assert_match "$output" "Create \{" \
@@ -18,19 +18,19 @@ assert_match "$output" "Create \{" \
 assert_contains "$output" "actor: URL \"${ACTOR_URL}\"" \
   "Activities should reference the actor URL"
 
-# Should contain Note objects (most common post type)
-assert_match "$output" "Note \{" \
-  "Outbox should contain Note objects"
+# Should contain Note or Article objects
+assert_match "$output" "(Note|Article) \{" \
+  "Outbox should contain Note or Article objects"
 
-# Notes should have required fields
+# Objects should have required fields
 assert_contains "$output" "published:" \
-  "Notes should have published timestamps"
+  "Objects should have published timestamps"
 
 assert_contains "$output" "content:" \
-  "Notes should have content"
+  "Objects should have content"
 
 # Addressing — should be public or addressed to followers
 assert_match "$output" 'to: URL "https://www.w3.org/ns/activitystreams#Public"' \
   "Public posts should address as:Public"
 
-echo "Outbox traversal OK: Contains Create activities with Note objects, proper addressing"
+echo "Outbox traversal OK: Contains Create activities with Note/Article objects, proper addressing"

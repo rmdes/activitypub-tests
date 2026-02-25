@@ -27,8 +27,8 @@ if [[ -n "$next_url" ]]; then
   items2_count=$(jq '.orderedItems | length' <<< "$page2")
 
   # Second page items should be different from first page
-  first_id_p1=$(jq -r '.orderedItems[0].id // .orderedItems[0].object.id // empty' <<< "$page1")
-  first_id_p2=$(jq -r '.orderedItems[0].id // .orderedItems[0].object.id // empty' <<< "$page2")
+  first_id_p1=$(jq -r '.orderedItems[0] | (.id // (if .object | type == "object" then .object.id else .object end) // empty)' <<< "$page1")
+  first_id_p2=$(jq -r '.orderedItems[0] | (.id // (if .object | type == "object" then .object.id else .object end) // empty)' <<< "$page2")
   if [[ -n "$first_id_p1" && -n "$first_id_p2" ]]; then
     assert_not_contains "$first_id_p2" "$first_id_p1" \
       "Second page first item should differ from first page first item"
