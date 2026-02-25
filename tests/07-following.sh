@@ -14,5 +14,5 @@ assert_match "$output" "totalItems: [0-9]+" \
 assert_contains "$output" "first:" \
   "Following should have a first page link"
 
-total=$(echo "$output" | grep -o 'totalItems: [0-9]*' | grep -o '[0-9]*')
+total=$(grep -o 'totalItems: [0-9]*' <<< "$output" | grep -o '[0-9]*')
 echo "Following OK: OrderedCollection with ${total} items"

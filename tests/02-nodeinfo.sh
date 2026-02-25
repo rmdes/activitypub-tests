@@ -10,7 +10,7 @@ assert_json_field "$wk_json" '.links[0].href' \
 
 # Fetch the actual NodeInfo document
 output=$(curl -s -H "Accept: application/json" \
-  "$(echo "$wk_json" | jq -r '.links[0].href')")
+  "$(jq -r '.links[0].href' <<< "$wk_json")")
 
 assert_json_eq "$output" '.software.name' 'indiekit' \
   "NodeInfo software name should be indiekit"
@@ -28,15 +28,15 @@ assert_json_field "$output" '.usage.users.total' \
   "NodeInfo should report user totals"
 
 # openRegistrations is a boolean — use tostring to avoid jq treating false as empty
-open_reg=$(echo "$output" | jq '.openRegistrations')
+open_reg=$(jq '.openRegistrations' <<< "$output")
 assert_eq "$open_reg" "false" \
   "NodeInfo should report openRegistrations as false"
 
 # Verify protocols include activitypub
-protocols=$(echo "$output" | jq -r '.protocols[]')
+protocols=$(jq -r '.protocols[]' <<< "$output")
 assert_contains "$protocols" "activitypub" \
   "NodeInfo protocols should include activitypub"
 
-version=$(echo "$output" | jq -r '.software.version')
-posts=$(echo "$output" | jq -r '.usage.localPosts')
+version=$(jq -r '.software.version' <<< "$output")
+posts=$(jq -r '.usage.localPosts' <<< "$output")
 echo "NodeInfo OK: indiekit v${version}, ${posts} local posts, protocol: activitypub"

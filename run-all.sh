@@ -96,13 +96,25 @@ fi
 
 section "Discovery"
 run_test "Discovery" "WebFinger resolution"                "tests/01-webfinger.sh"
+run_test "Discovery" "WebFinger subscribe template"        "tests/23-webfinger-subscribe.sh"
+run_test "Discovery" "WebFinger error handling"            "tests/37-webfinger-errors.sh"
 run_test "Discovery" "NodeInfo endpoint"                   "tests/02-nodeinfo.sh"
 run_test "Discovery" "NodeInfo well-known chain"           "tests/22-nodeinfo-wellknown.sh"
+run_test "Discovery" "NodeInfo version format"             "tests/35-nodeinfo-version.sh"
+run_test "Discovery" "NodeInfo content types"              "tests/42-nodeinfo-content-type.sh"
 
 section "Actor"
 run_test "Actor" "Actor lookup (fedify)"                   "tests/03-actor.sh"
 run_test "Actor" "Actor required fields"                   "tests/04-actor-fields.sh"
 run_test "Actor" "Actor JSON structure"                    "tests/19-actor-json.sh"
+run_test "Actor" "Actor attachments (PropertyValue)"       "tests/24-actor-attachments.sh"
+run_test "Actor" "Actor multi-key (RSA + Ed25519)"         "tests/25-actor-multikey.sh"
+run_test "Actor" "Actor summary / bio"                     "tests/30-actor-summary.sh"
+run_test "Actor" "Actor alsoKnownAs"                       "tests/31-actor-also-known-as.sh"
+run_test "Actor" "Actor manuallyApprovesFollowers"         "tests/32-actor-manually-approves.sh"
+run_test "Actor" "Actor icon and image"                    "tests/33-actor-image.sh"
+run_test "Actor" "Actor not found (404)"                   "tests/38-actor-not-found.sh"
+run_test "Actor" "Actor ld+json Accept header"             "tests/41-actor-ld-json-accept.sh"
 
 section "Collections"
 run_test "Collections" "Outbox collection"                 "tests/05-outbox.sh"
@@ -111,17 +123,23 @@ run_test "Collections" "Following collection"              "tests/07-following.s
 run_test "Collections" "Liked collection"                  "tests/13-liked.sh"
 run_test "Collections" "Featured (pinned) collection"      "tests/14-featured.sh"
 run_test "Collections" "Featured tags collection"          "tests/15-featured-tags.sh"
+run_test "Collections" "Featured tags structure"            "tests/44-featured-tags-structure.sh"
 run_test "Collections" "Collection URI resolution"         "tests/20-collection-uris.sh"
+run_test "Collections" "Collection pagination"             "tests/34-collection-pagination.sh"
 run_test "Collections" "Outbox traversal (first page)"     "tests/08-outbox-traverse.sh"
+run_test "Collections" "Outbox actor attribution"          "tests/43-outbox-actor-attribution.sh"
 
 section "Content Negotiation"
 run_test "Content" "Post returns AS2 JSON"                 "tests/09-content-negotiation.sh"
+run_test "Content" "HTML requests don't get AS2 JSON"      "tests/40-content-neg-html.sh"
 run_test "Content" "Root URL redirects to actor"           "tests/10-root-redirect.sh"
 run_test "Content" "Object dispatcher (dereference)"       "tests/17-object-dispatcher.sh"
 
 section "Inbox"
 run_test "Inbox" "GET inbox returns 405"                   "tests/11-inbox-get.sh"
 run_test "Inbox" "GET shared inbox returns 405"            "tests/12-shared-inbox-get.sh"
+run_test "Inbox" "Inbox 405 headers (Allow, Content-Type)" "tests/39-inbox-405-headers.sh"
+run_test "Inbox" "Unsigned POST to inbox rejected"         "tests/36-inbox-unsigned-post.sh"
 
 section "Instance Actor & Aliases"
 run_test "Federation" "Instance actor (Application)"       "tests/16-instance-actor.sh"
@@ -129,6 +147,12 @@ run_test "Federation" "WebFinger alias resolution"         "tests/18-webfinger-a
 
 section "HTTP Protocol"
 run_test "HTTP" "HTTP headers compliance"                  "tests/21-http-headers.sh"
+run_test "HTTP" "Vary and CORS headers"                    "tests/29-vary-headers.sh"
+
+section "Endpoints"
+run_test "Endpoints" "Authorize interaction"               "tests/26-authorize-interaction.sh"
+run_test "Endpoints" "Public profile page"                 "tests/27-public-profile.sh"
+run_test "Endpoints" "Quick replies 404"                   "tests/28-quick-replies-404.sh"
 
 # ====================================================================
 # TERMINAL SUMMARY
@@ -196,7 +220,7 @@ HEADER
   echo "| Category | Pass | Fail | Skip | Status |"
   echo "|----------|------|------|------|--------|"
 
-  for cat in "Discovery" "Actor" "Collections" "Content" "Inbox" "Federation" "HTTP"; do
+  for cat in "Discovery" "Actor" "Collections" "Content" "Inbox" "Federation" "HTTP" "Endpoints"; do
     cat_pass=0; cat_fail=0; cat_skip=0
     for r in "${RESULTS[@]}"; do
       IFS='|' read -r rcat rname rstatus rdetail <<< "$r"

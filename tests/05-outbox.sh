@@ -15,5 +15,5 @@ assert_contains "$output" "first:" \
   "Outbox should have a first page link"
 
 # Extract count
-total=$(echo "$output" | grep -o 'totalItems: [0-9]*' | grep -o '[0-9]*')
+total=$(grep -o 'totalItems: [0-9]*' <<< "$output" | grep -o '[0-9]*')
 echo "Outbox OK: OrderedCollection with ${total} items"

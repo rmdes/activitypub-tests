@@ -11,7 +11,7 @@ assert_contains "$output" "Person {" \
 assert_contains "$output" "id: URL \"${ACTOR_URL}\"" \
   "Actor id should match the lookup URL"
 
-assert_contains "$output" "Successfully fetched the object" \
+assert_contains "$output" "Fetched object:" \
   "Lookup should complete successfully"
 
 echo "Actor OK: Person at ${ACTOR_URL}"

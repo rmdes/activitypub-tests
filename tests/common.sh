@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 # common.sh — Shared variables and helpers for all tests
+#
+# NOTE: All assertion helpers use here-strings (<<< "$var") instead of
+# echo "$var" | ... because fedify lookup output can be 7MB+ (inline
+# base64 avatar data). echo fails silently with multi-MB arguments;
+# here-strings handle them correctly.
 
 DOMAIN="${DOMAIN:-rmendes.net}"
 HANDLE="${HANDLE:-rick}"
@@ -12,19 +17,19 @@ _TEST_DETAILS=""
 
 # assert_contains <haystack> <needle> <message>
 assert_contains() {
-  if echo "$1" | grep -qF "$2"; then
+  if grep -qF -- "$2" <<< "$1"; then
     return 0
   else
     echo "ASSERT FAILED: $3"
     echo "  Expected to contain: $2"
-    echo "  Got: $(echo "$1" | head -5)"
+    echo "  Got: $(head -5 <<< "$1")"
     return 1
   fi
 }
 
 # assert_not_contains <haystack> <needle> <message>
 assert_not_contains() {
-  if echo "$1" | grep -qF "$2"; then
+  if grep -qF -- "$2" <<< "$1"; then
     echo "ASSERT FAILED: $3"
     echo "  Expected NOT to contain: $2"
     return 1
@@ -35,12 +40,12 @@ assert_not_contains() {
 
 # assert_match <haystack> <pattern> <message>
 assert_match() {
-  if echo "$1" | grep -qE "$2"; then
+  if grep -qE "$2" <<< "$1"; then
     return 0
   else
     echo "ASSERT FAILED: $3"
     echo "  Expected to match: $2"
-    echo "  Got: $(echo "$1" | head -5)"
+    echo "  Got: $(head -5 <<< "$1")"
     return 1
   fi
 }
@@ -83,11 +88,11 @@ assert_json_field() {
   local path="$2"
   local msg="$3"
   local val
-  val=$(echo "$json" | jq -r "$path // empty" 2>/dev/null)
+  val=$(jq -r "$path // empty" <<< "$json" 2>/dev/null)
   if [[ -z "$val" ]]; then
     echo "ASSERT FAILED: $msg"
     echo "  jq path '$path' returned empty/null"
-    echo "  JSON (first 200 chars): $(echo "$json" | head -c 200)"
+    echo "  JSON (first 200 chars): $(head -c 200 <<< "$json")"
     return 1
   fi
   return 0
@@ -100,6 +105,6 @@ assert_json_eq() {
   local expected="$3"
   local msg="$4"
   local val
-  val=$(echo "$json" | jq -r "$path // empty" 2>/dev/null)
+  val=$(jq -r "$path // empty" <<< "$json" 2>/dev/null)
   assert_eq "$val" "$expected" "$msg"
 }
