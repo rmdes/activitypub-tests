@@ -106,6 +106,7 @@ section "Discovery"
 run_test "Discovery" "WebFinger resolution"                "tests/01-webfinger.sh"
 run_test "Discovery" "WebFinger subscribe template"        "tests/23-webfinger-subscribe.sh"
 run_test "Discovery" "WebFinger error handling"            "tests/37-webfinger-errors.sh"
+run_test "Discovery" "WebFinger avatar link"              "tests/47-webfinger-avatar.sh"
 run_test "Discovery" "NodeInfo endpoint"                   "tests/02-nodeinfo.sh"
 run_test "Discovery" "NodeInfo well-known chain"           "tests/22-nodeinfo-wellknown.sh"
 run_test "Discovery" "NodeInfo version format"             "tests/35-nodeinfo-version.sh"
@@ -123,6 +124,8 @@ run_test "Actor" "Actor manuallyApprovesFollowers"         "tests/32-actor-manua
 run_test "Actor" "Actor icon and image"                    "tests/33-actor-image.sh"
 run_test "Actor" "Actor not found (404)"                   "tests/38-actor-not-found.sh"
 run_test "Actor" "Actor ld+json Accept header"             "tests/41-actor-ld-json-accept.sh"
+run_test "Actor" "Actor endpoints (sharedInbox)"          "tests/45-actor-endpoints.sh"
+run_test "Actor" "Actor published date"                   "tests/46-actor-published.sh"
 
 section "Collections"
 run_test "Collections" "Outbox collection"                 "tests/05-outbox.sh"
@@ -136,6 +139,8 @@ run_test "Collections" "Collection URI resolution"         "tests/20-collection-
 run_test "Collections" "Collection pagination"             "tests/34-collection-pagination.sh"
 run_test "Collections" "Outbox traversal (first page)"     "tests/08-outbox-traverse.sh"
 run_test "Collections" "Outbox actor attribution"          "tests/43-outbox-actor-attribution.sh"
+run_test "Collections" "Outbox Create structure"           "tests/48-outbox-create-structure.sh"
+run_test "Collections" "Followers collection fields"       "tests/49-followers-fields.sh"
 
 section "Content Negotiation"
 run_test "Content" "Post returns AS2 JSON"                 "tests/09-content-negotiation.sh"
@@ -156,6 +161,9 @@ run_test "Federation" "WebFinger alias resolution"         "tests/18-webfinger-a
 section "HTTP Protocol"
 run_test "HTTP" "HTTP headers compliance"                  "tests/21-http-headers.sh"
 run_test "HTTP" "Vary and CORS headers"                    "tests/29-vary-headers.sh"
+
+section "JSON-LD"
+run_test "JSON-LD" "Context namespaces"                    "tests/50-context-jsonld.sh"
 
 section "Endpoints"
 run_test "Endpoints" "Authorize interaction"               "tests/26-authorize-interaction.sh"
@@ -228,7 +236,7 @@ HEADER
   echo "| Category | Pass | Fail | Skip | Status |"
   echo "|----------|------|------|------|--------|"
 
-  for cat in "Discovery" "Actor" "Collections" "Content" "Inbox" "Federation" "HTTP" "Endpoints"; do
+  for cat in "Discovery" "Actor" "Collections" "Content" "Inbox" "Federation" "HTTP" "JSON-LD" "Endpoints"; do
     cat_pass=0; cat_fail=0; cat_skip=0
     for r in "${RESULTS[@]}"; do
       IFS='|' read -r rcat rname rstatus rdetail <<< "$r"
