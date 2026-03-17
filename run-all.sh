@@ -192,9 +192,14 @@ if [[ "$SKIP_C2S" == "false" ]]; then
   run_test "C2S" "Delete removes post from AP"            "tests/54-c2s-delete-removes-post.sh"
   run_test "C2S" "Update reflects in AS2"                 "tests/55-c2s-update-reflects.sh"
 else
+  SKIP=$((SKIP + 5))
+  for c2s_name in "Create note appears in outbox" "Post dereferenceable as AS2" "Outbox Create activity structure" "Delete removes post from AP" "Update reflects in AS2"; do
+    RESULTS+=("C2S|${c2s_name}|SKIP|SKIP: --skip-c2s flag (avoids creating real posts)")
+  done
   if [[ "$VERBOSE" != "--report-only" ]]; then
     echo ""
     echo "--- Client-to-Server (Micropub → AP) [SKIPPED via --skip-c2s] ---"
+    echo "  5 tests skipped"
   fi
 fi
 
