@@ -46,9 +46,9 @@ All configuration is via environment variables with sensible defaults:
 
 The test scripts assume the ActivityPub endpoint is mounted at `/activitypub` (standard for `@rmdes/indiekit-endpoint-activitypub`). This is set via `MOUNT_PATH` in `common.sh`.
 
-## Test Suite (44 tests)
+## Test Suite (53 tests)
 
-### Discovery (7 tests)
+### Discovery (8 tests)
 
 | # | Test | What it checks |
 |---|------|----------------|
@@ -58,9 +58,10 @@ The test scripts assume the ActivityPub endpoint is mounted at `/activitypub` (s
 | 23 | WebFinger subscribe template | OStatus subscribe `rel` link with `{uri}` template for remote follow |
 | 35 | NodeInfo version format | Software version is semver-like (digits and dots) |
 | 37 | WebFinger error handling | 302/404 for unknown resource, 400 for missing `resource` parameter |
+| 47 | WebFinger avatar link | WebFinger includes avatar `rel` link (browser.pub compatibility) |
 | 42 | NodeInfo content types | `application/jrd+json` or `application/json` on both NodeInfo endpoints |
 
-### Actor (11 tests)
+### Actor (13 tests)
 
 | # | Test | What it checks |
 |---|------|----------------|
@@ -74,9 +75,11 @@ The test scripts assume the ActivityPub endpoint is mounted at `/activitypub` (s
 | 32 | Actor manuallyApprovesFollowers | Boolean field is present (locked/unlocked account indicator) |
 | 33 | Actor icon and image | `icon` (avatar) has `type`, `mediaType`, and `url`; optional `image` (header) checked if present |
 | 38 | Actor not found | Non-existent actor path returns 404 or 302 (not 200) |
+| 45 | Actor endpoints | `endpoints` object has `sharedInbox` without invalid `as:Endpoints` type |
+| 46 | Actor published date | `published` date and `discoverable` flag present (Mastodon compatibility) |
 | 41 | Actor ld+json Accept | Actor responds to `application/ld+json; profile="https://www.w3.org/ns/activitystreams"` Accept header (AP spec Section 3.2) |
 
-### Collections (11 tests)
+### Collections (13 tests)
 
 | # | Test | What it checks |
 |---|------|----------------|
@@ -91,6 +94,8 @@ The test scripts assume the ActivityPub endpoint is mounted at `/activitypub` (s
 | 34 | Collection pagination | Outbox pages 1 and 2 return different `orderedItems` |
 | 43 | Outbox actor attribution | Outbox items have `actor` field referencing the correct actor URL |
 | 44 | Featured tags structure | Featured tags are `Hashtag` objects with `name` starting with `#` and an `href` URL |
+| 48 | Outbox Create structure | Outbox items are Create activities wrapping Note/Article with required fields |
+| 49 | Followers collection fields | Followers collection is OrderedCollection with proper `totalItems` and structure |
 
 ### Content Negotiation (4 tests)
 
@@ -130,7 +135,81 @@ The test scripts assume the ActivityPub endpoint is mounted at `/activitypub` (s
 |---|------|----------------|
 | 26 | Authorize interaction | `/authorize_interaction` returns 400 without `uri`, 302 redirect with `uri` (remote follow flow) |
 | 27 | Public profile page | Browser request to actor URL returns HTML (not JSON), 404 for unknown actors |
-| 28 | Quick replies 404 | Non-existent quick reply note URLs return 404 |
+| 28 | Compose auth redirect | Compose endpoint redirects unauthenticated requests (302/303) |
+
+### JSON-LD (1 test)
+
+| # | Test | What it checks |
+|---|------|----------------|
+| 50 | Context namespaces | `@context` includes AS2 and security namespaces on actor and outbox |
+
+### Client-to-Server / C2S (5 tests)
+
+| # | Test | What it checks |
+|---|------|----------------|
+| 51 | C2S create note | Micropub create → post appears in outbox |
+| 52 | C2S post dereference | Created post returns valid AS2 (type, content, attributedTo) |
+| 53 | C2S outbox activity structure | Create activity has correct type, actor, object, public addressing |
+| 54 | C2S delete removes post | Micropub delete → post returns 404/410 via AS2 |
+| 55 | C2S update reflects | Micropub update → AS2 dereference shows updated content |
+
+C2S tests require a Micropub token. See [C2S Test Setup](#c2s-test-setup) below.
+
+## C2S Test Setup
+
+C2S tests create, update, and delete posts via Micropub, then verify the results appear correctly in the ActivityPub layer. They reuse the IndieAuth token stored by the [indiekit-mcp-micropub](https://github.com/rmdes/indiekit-mcp-micropub) MCP server.
+
+### Prerequisites
+
+1. **MCP Micropub authentication** — Run `micropub_auth` via the MCP client once to obtain and store an IndieAuth token at `~/.config/micropub-mcp/${DOMAIN}.json`
+2. **AP syndicator auto-checked** — The ActivityPub syndicator plugin must have `checked: true` in its Indiekit config so posts are automatically syndicated
+
+### How C2S tests create posts
+
+The bash helper `micropub_create` in `common-micropub.sh` sends a Micropub JSON request equivalent to this MCP tool call:
+
+```
+micropub_create(
+  type: "note",
+  content: "Test post content",
+  slug: "test-slug",
+  syndicate_to: ["https://rmendes.net/"],
+  ai_text_level: "2",
+  ai_tools: "Claude",
+  ai_description: "Automated C2S test via Micropub"
+)
+```
+
+Which translates to this Micropub JSON body:
+
+```json
+{
+  "type": ["h-entry"],
+  "properties": {
+    "content": ["Test post content"],
+    "mp-slug": ["test-slug"],
+    "mp-syndicate-to": ["https://rmendes.net/"],
+    "ai-text-level": ["2"],
+    "ai-tools": ["Claude"],
+    "ai-description": ["Automated C2S test via Micropub"]
+  }
+}
+```
+
+**Note:** Since the AP syndicator has `checked: true`, the `mp-syndicate-to` field is technically optional — posts are auto-syndicated regardless. The test helper includes it for explicitness. The `ai-*` fields are AI provenance metadata ([draft W3C spec](https://www.w3.org/TR/ai-web-impact/)) and are optional.
+
+### Token file format
+
+`~/.config/micropub-mcp/${DOMAIN}.json`:
+
+```json
+{
+  "access_token": "...",
+  "micropub_endpoint": "https://rmendes.net/micropub"
+}
+```
+
+If no token file exists, C2S tests print `SKIP` and exit 0 (not a failure).
 
 ## Compliance Report
 
@@ -155,10 +234,13 @@ activitypub-tests/
   run-all.sh              # Test runner + compliance report generator
   tests/
     common.sh             # Shared variables, assertion helpers
-    01-webfinger.sh       # Individual test scripts (self-contained)
-    02-nodeinfo.sh
+    common-micropub.sh    # Micropub helpers for C2S tests (token, create/delete/update)
+    01-webfinger.sh       # S2S test scripts (01-50, self-contained)
     ...
-    44-featured-tags-structure.sh
+    50-context-jsonld.sh
+    51-c2s-create-note.sh # C2S test scripts (51-55, require Micropub token)
+    ...
+    55-c2s-update-reflects.sh
   reports/                # Generated compliance reports (gitignored)
 ```
 
@@ -175,6 +257,18 @@ activitypub-tests/
 | `assert_json_eq` | jq path returns expected value |
 
 All helpers use here-strings (`<<< "$var"`) instead of `echo "$var" | ...` to handle multi-megabyte strings (e.g., Fedify lookup output with inline base64 avatar data).
+
+### Micropub Helpers (common-micropub.sh)
+
+| Function | Description |
+|----------|-------------|
+| `micropub_create` | Create a note with AP syndication + AI provenance, returns Location URL |
+| `micropub_delete` | Delete a post by URL |
+| `micropub_update_content` | Update a post's content |
+| `micropub_query_source` | Query Micropub source for a post |
+| `wait_for_syndication` | Sleep N seconds for AP syndicator to process |
+| `outbox_find_by_slug` | Count outbox activities matching a slug (handles string + object) |
+| `outbox_get_activity_by_slug` | Get first outbox activity matching a slug as JSON |
 
 ### Writing New Tests
 
@@ -207,7 +301,7 @@ run_test "Category" "Test description" "tests/NN-test-name.sh"
 
 ### Conventions
 
-- **Test numbering**: Sequential, grouped by when they were added (01-22 original, 23-29 Fedify 2.0 high priority, 30-38 medium priority, 39-44 low priority)
+- **Test numbering**: Sequential, grouped by when they were added (01-22 original, 23-29 Fedify 2.0 high priority, 30-38 medium priority, 39-44 low priority, 45-50 browser.pub/v2.15, 51-55 C2S/Micropub)
 - **SKIP vs FAIL**: Use SKIP for optional features (e.g., `alsoKnownAs` not configured). Use FAIL for required federation features.
 - **Auth-aware assertions**: Some endpoints redirect to login (302) instead of returning 404 when Indiekit auth middleware catches the request. Tests accept both where appropriate.
 - **Large string handling**: Never use `echo "$var" | grep` — use `grep ... <<< "$var"` or `jq ... <<< "$var"` to avoid silent failures with multi-MB strings.

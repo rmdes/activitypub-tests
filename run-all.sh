@@ -173,6 +173,13 @@ run_test "Endpoints" "Authorize interaction"               "tests/26-authorize-i
 run_test "Endpoints" "Public profile page"                 "tests/27-public-profile.sh"
 run_test "Endpoints" "Compose auth redirect"                "tests/28-quick-replies-404.sh"
 
+section "Client-to-Server (Micropub → AP)"
+run_test "C2S" "Create note appears in outbox"          "tests/51-c2s-create-note.sh"
+run_test "C2S" "Post dereferenceable as AS2"            "tests/52-c2s-post-dereference.sh"
+run_test "C2S" "Outbox Create activity structure"       "tests/53-c2s-outbox-activity-structure.sh"
+run_test "C2S" "Delete removes post from AP"            "tests/54-c2s-delete-removes-post.sh"
+run_test "C2S" "Update reflects in AS2"                 "tests/55-c2s-update-reflects.sh"
+
 # ====================================================================
 # TERMINAL SUMMARY
 # ====================================================================
@@ -239,7 +246,7 @@ HEADER
   echo "| Category | Pass | Fail | Skip | Status |"
   echo "|----------|------|------|------|--------|"
 
-  for cat in "Discovery" "Actor" "Collections" "Content" "Inbox" "Federation" "HTTP" "JSON-LD" "Endpoints"; do
+  for cat in "Discovery" "Actor" "Collections" "Content" "Inbox" "Federation" "HTTP" "JSON-LD" "Endpoints" "C2S"; do
     cat_pass=0; cat_fail=0; cat_skip=0
     for r in "${RESULTS[@]}"; do
       IFS='|' read -r rcat rname rstatus rdetail <<< "$r"
