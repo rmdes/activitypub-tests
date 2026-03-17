@@ -25,11 +25,17 @@ deno install -A jsr:@fedify/cli
 # Test the default target
 ./run-all.sh
 
+# Skip C2S tests (avoids creating real posts that syndicate to followers)
+./run-all.sh --skip-c2s
+
 # Test a different server
 DOMAIN=example.com HANDLE=alice ./run-all.sh
 
 # Verbose output (show details even for passing tests)
 ./run-all.sh --verbose
+
+# Combine flags
+./run-all.sh --skip-c2s --verbose
 
 # Run a single test
 ./tests/01-webfinger.sh

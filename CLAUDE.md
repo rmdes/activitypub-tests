@@ -29,6 +29,9 @@ activitypub-tests/
 # All 58 tests against the default target (rmendes.net)
 ./run-all.sh
 
+# Skip C2S tests (avoids creating real posts that syndicate to followers)
+./run-all.sh --skip-c2s
+
 # Single test
 ./tests/01-webfinger.sh
 
