@@ -2,7 +2,7 @@
 
 ## What This Repo Is
 
-A black-box test suite (58 bash scripts) that validates ActivityPub federation compliance against a live server. Tests use `curl`, `jq`, and the Fedify CLI — no application code, no unit tests, no build step. C2S tests (51-55) additionally require a Micropub token from [indiekit-mcp-micropub](https://github.com/rmdes/indiekit-mcp-micropub).
+A black-box test suite (61 bash scripts) that validates ActivityPub federation compliance against a live server. Tests use `curl`, `jq`, and the Fedify CLI — no application code, no unit tests, no build step. C2S tests (51-55) additionally require a Micropub token from [indiekit-mcp-micropub](https://github.com/rmdes/indiekit-mcp-micropub).
 
 The target server is `@rmdes/indiekit-endpoint-activitypub` running on Indiekit, but the tests are protocol-generic.
 
@@ -19,14 +19,14 @@ activitypub-tests/
     55-c2s-update-reflects.sh
     56-inbox-orderedcollection.sh
     ...
-    58-object-shares-collection.sh
+    61-actor-inbox-outbox-properties.sh
   reports/                # Generated compliance reports (gitignored)
 ```
 
 ## Running Tests
 
 ```bash
-# All 58 tests against the default target (rmendes.net)
+# All 61 tests against the default target (rmendes.net)
 ./run-all.sh
 
 # Skip C2S tests (avoids creating real posts that syndicate to followers)
@@ -39,19 +39,20 @@ activitypub-tests/
 DOMAIN=example.com HANDLE=alice ./run-all.sh
 ```
 
-## Test Categories (58 tests)
+## Test Categories (61 tests)
 
 | Category | Count | Tests | What they validate |
 |----------|-------|-------|-------------------|
 | Discovery | 8 | 01, 02, 22, 23, 35, 37, 42, 47 | WebFinger resolution + subscribe template + errors + avatar, NodeInfo chain + version + content types |
 | Actor | 13 | 03, 04, 19, 24, 25, 30-33, 38, 41, 45, 46 | Fedify lookup, required fields, JSON structure, attachments, multi-key, bio, alsoKnownAs, manuallyApprovesFollowers, icon/image, 404, ld+json Accept, sharedInbox endpoints, published date |
-| Collections | 16 | 05-08, 13-15, 20, 34, 43, 44, 48, 49, 56-58 | Outbox/followers/following/liked/featured/featuredTags as OrderedCollection with JSON type verification, pagination, actor attribution, Hashtag structure, Create structure, inbox OrderedCollection (socialweb.coop), per-object likes/shares collections |
+| Collections | 13 | 05-08, 13-15, 20, 34, 43, 44, 48, 49 | Outbox/followers/following/liked/featured/featuredTags as OrderedCollection with JSON type verification, pagination, actor attribution, Hashtag structure, Create structure, followers fields |
 | Content Negotiation | 4 | 09, 10, 17, 40 | AS2 JSON for AP clients, HTML for browsers, object dereferencing, root redirect |
 | Inbox | 4 | 11, 12, 36, 39 | GET rejection (405), unsigned POST rejection (401), Allow/Content-Type headers |
 | Instance & Aliases | 2 | 16, 18 | Instance actor (Application type), WebFinger alias resolution |
 | HTTP Protocol | 2 | 21, 29 | Content-Type headers, Vary: Accept, CORS on WebFinger |
 | JSON-LD | 1 | 50 | Context namespace verification |
 | Endpoints | 3 | 26, 27, 28 | Authorize interaction (remote follow), public profile (HTML), compose auth redirect |
+| socialweb.coop | 6 | 56-61 | Inbox/outbox/liked/followers/following/shares/likes collection type checks, actor inbox+outbox properties, AS2 GET, outbox POST 201 — mapped to socialweb.coop UUIDs |
 | C2S (Micropub → AP) | 5 | 51-55 | Micropub create/update/delete → AP outbox verification, AS2 dereference, activity structure (requires MCP micropub token) |
 
 ## Critical Conventions
@@ -92,7 +93,7 @@ Sequential by addition order, not by category:
 - **39-44**: Low-priority (405 headers, content negotiation, ld+json, NodeInfo content types, outbox attribution, featured tags structure)
 - **45-50**: v2.15.0 coverage (actor endpoints, published date, WebFinger avatar, outbox Create structure, followers fields, JSON-LD context)
 - **51-55**: C2S / Micropub → AP pipeline (create note, post dereference, outbox activity structure, delete, update) — requires MCP micropub token
-- **56-58**: socialweb.coop compliance (inbox OrderedCollection, per-object likes collection, per-object shares collection)
+- **56-61**: socialweb.coop compliance (inbox OrderedCollection, per-object likes/shares, outbox POST 201, actor AS2 GET, actor inbox+outbox)
 
 ## Adding New Tests
 

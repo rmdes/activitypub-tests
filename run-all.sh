@@ -49,7 +49,17 @@ run_test() {
   local output rc
   output=$("$SCRIPT_DIR/$script" 2>&1) && rc=0 || rc=$?
 
-  if [[ $rc -eq 0 ]]; then
+  if echo "$output" | grep -q "^SKIP:"; then
+    # SKIP: output contains "SKIP:" (exit 0 per convention)
+    SKIP=$((SKIP + 1))
+    local skip_reason
+    skip_reason=$(echo "$output" | grep "^SKIP:" | head -1)
+    RESULTS+=("${category}|${name}|SKIP|${skip_reason}")
+    if [[ "$VERBOSE" != "--report-only" ]]; then
+      echo "- SKIP"
+      echo "    $skip_reason"
+    fi
+  elif [[ $rc -eq 0 ]]; then
     PASS=$((PASS + 1))
     # Extract the detail line (last echo from the script)
     local detail
@@ -61,15 +71,6 @@ run_test() {
         echo "$output" | sed 's/^/    /'
         echo ""
       fi
-    fi
-  elif echo "$output" | grep -q "^SKIP:"; then
-    SKIP=$((SKIP + 1))
-    local skip_reason
-    skip_reason=$(echo "$output" | grep "^SKIP:" | head -1)
-    RESULTS+=("${category}|${name}|SKIP|${skip_reason}")
-    if [[ "$VERBOSE" != "--report-only" ]]; then
-      echo "- SKIP"
-      echo "    $skip_reason"
     fi
   else
     FAIL=$((FAIL + 1))
@@ -152,9 +153,6 @@ run_test "Collections" "Outbox traversal (first page)"     "tests/08-outbox-trav
 run_test "Collections" "Outbox actor attribution"          "tests/43-outbox-actor-attribution.sh"
 run_test "Collections" "Outbox Create structure"           "tests/48-outbox-create-structure.sh"
 run_test "Collections" "Followers collection fields"       "tests/49-followers-fields.sh"
-run_test "Collections" "Inbox OrderedCollection type"      "tests/56-inbox-orderedcollection.sh"
-run_test "Collections" "Object likes collection"           "tests/57-object-likes-collection.sh"
-run_test "Collections" "Object shares collection"          "tests/58-object-shares-collection.sh"
 
 section "Content Negotiation"
 run_test "Content" "Post returns AS2 JSON"                 "tests/09-content-negotiation.sh"
@@ -183,6 +181,14 @@ section "Endpoints"
 run_test "Endpoints" "Authorize interaction"               "tests/26-authorize-interaction.sh"
 run_test "Endpoints" "Public profile page"                 "tests/27-public-profile.sh"
 run_test "Endpoints" "Compose auth redirect"                "tests/28-quick-replies-404.sh"
+
+section "socialweb.coop Compliance"
+run_test "socialweb.coop" "Inbox OrderedCollection type"      "tests/56-inbox-orderedcollection.sh"
+run_test "socialweb.coop" "Object likes collection"           "tests/57-object-likes-collection.sh"
+run_test "socialweb.coop" "Object shares collection"          "tests/58-object-shares-collection.sh"
+run_test "socialweb.coop" "Outbox POST returns 201"           "tests/59-outbox-post-201.sh"
+run_test "socialweb.coop" "Actor serves AS2 to GET"           "tests/60-actor-serves-as2-to-get.sh"
+run_test "socialweb.coop" "Actor has inbox+outbox properties" "tests/61-actor-inbox-outbox-properties.sh"
 
 if [[ "$SKIP_C2S" == "false" ]]; then
   section "Client-to-Server (Micropub → AP)"
@@ -269,7 +275,7 @@ HEADER
   echo "| Category | Pass | Fail | Skip | Status |"
   echo "|----------|------|------|------|--------|"
 
-  for cat in "Discovery" "Actor" "Collections" "Content" "Inbox" "Federation" "HTTP" "JSON-LD" "Endpoints" "C2S"; do
+  for cat in "Discovery" "Actor" "Collections" "Content" "Inbox" "Federation" "HTTP" "JSON-LD" "Endpoints" "socialweb.coop" "C2S"; do
     cat_pass=0; cat_fail=0; cat_skip=0
     for r in "${RESULTS[@]}"; do
       IFS='|' read -r rcat rname rstatus rdetail <<< "$r"

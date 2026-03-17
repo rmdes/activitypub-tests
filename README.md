@@ -52,7 +52,7 @@ All configuration is via environment variables with sensible defaults:
 
 The test scripts assume the ActivityPub endpoint is mounted at `/activitypub` (standard for `@rmdes/indiekit-endpoint-activitypub`). This is set via `MOUNT_PATH` in `common.sh`.
 
-## Test Suite (58 tests)
+## Test Suite (61 tests)
 
 ### Discovery (8 tests)
 
@@ -85,7 +85,7 @@ The test scripts assume the ActivityPub endpoint is mounted at `/activitypub` (s
 | 46 | Actor published date | `published` date and `discoverable` flag present (Mastodon compatibility) |
 | 41 | Actor ld+json Accept | Actor responds to `application/ld+json; profile="https://www.w3.org/ns/activitystreams"` Accept header (AP spec Section 3.2) |
 
-### Collections (16 tests)
+### Collections (13 tests)
 
 | # | Test | What it checks |
 |---|------|----------------|
@@ -102,9 +102,6 @@ The test scripts assume the ActivityPub endpoint is mounted at `/activitypub` (s
 | 44 | Featured tags structure | Featured tags are `Hashtag` objects with `name` starting with `#` and an `href` URL |
 | 48 | Outbox Create structure | Outbox items are Create activities wrapping Note/Article with required fields |
 | 49 | Followers collection fields | Followers collection is OrderedCollection with proper `totalItems` and structure |
-| 56 | Inbox OrderedCollection | Inbox identifies as OrderedCollection via JSON type (socialweb.coop UUID 5e94d155) |
-| 57 | Object likes collection | Per-object `likes` collection type is OrderedCollection or Collection (socialweb.coop UUID 200b9bc8, AP §5.7) |
-| 58 | Object shares collection | Per-object `shares` collection type is OrderedCollection or Collection (socialweb.coop UUID b03a5245, AP §5.8) |
 
 ### Content Negotiation (4 tests)
 
@@ -164,15 +161,27 @@ The test scripts assume the ActivityPub endpoint is mounted at `/activitypub` (s
 
 C2S tests require a Micropub token. See [C2S Test Setup](#c2s-test-setup) below.
 
-### socialweb.coop Compliance (3 tests)
+### socialweb.coop Compliance (6 tests)
 
 | # | Test | What it checks |
 |---|------|----------------|
 | 56 | Inbox OrderedCollection | Inbox identifies as OrderedCollection (AP §5.2, socialweb.coop UUID 5e94d155) |
 | 57 | Object likes collection | Per-object `likes` is OrderedCollection or Collection (AP §5.7, UUID 200b9bc8) |
 | 58 | Object shares collection | Per-object `shares` is OrderedCollection or Collection (AP §5.8, UUID b03a5245) |
+| 59 | Outbox POST returns 201 | C2S outbox POST returns 201 (AP §6, UUID 723afcbb). SKIP if 405 (read-only outbox) |
+| 60 | Actor serves AS2 to GET | Actor responds with AS2 JSON Object to `ld+json` Accept (AP §3.2, UUID e7ee491d) |
+| 61 | Actor inbox+outbox properties | Actor has `inbox` and `outbox` properties (AP §4.1, UUID acaacb5f) |
 
-These tests map to specific [socialweb.coop activitypub-testing](https://socialweb.coop/activitypub-testing/) test cases and verify raw JSON `type` fields via `curl` + `jq` (not Fedify lookup). Tests 57-58 SKIP if the server doesn't expose per-object `likes`/`shares` properties (they are MAY per the AP spec).
+These tests map to specific [socialweb.coop activitypub-testing](https://socialweb.coop/activitypub-testing/) test cases and verify raw JSON fields via `curl` + `jq` (not Fedify lookup). Tests 57-58 SKIP if the server doesn't expose per-object `likes`/`shares` properties (they are MAY per the AP spec). Test 59 SKIPs for servers using Micropub instead of AP C2S outbox POST (responds 405).
+
+Additionally, the following socialweb.coop test cases are covered by existing tests in other categories:
+
+| socialweb.coop UUID | Our Test(s) | What it checks |
+|---|---|---|
+| 4af549f4 (outbox OrderedCollection) | 05 | Outbox `type` is `OrderedCollection` |
+| 018c3e08 (followers collection) | 06, 49 | Followers `type` is OrderedCollection or Collection |
+| 018c3e17 (following collection) | 07 | Following `type` is OrderedCollection or Collection |
+| 018c3df2 (liked collection) | 13 | Liked `type` is OrderedCollection or Collection |
 
 ## C2S Test Setup
 
@@ -260,9 +269,9 @@ activitypub-tests/
     51-c2s-create-note.sh # C2S test scripts (51-55, require Micropub token)
     ...
     55-c2s-update-reflects.sh
-    56-inbox-orderedcollection.sh  # socialweb.coop compliance (56-58)
+    56-inbox-orderedcollection.sh  # socialweb.coop compliance (56-61)
     ...
-    58-object-shares-collection.sh
+    61-actor-inbox-outbox-properties.sh
   reports/                # Generated compliance reports (gitignored)
 ```
 
@@ -323,7 +332,7 @@ run_test "Category" "Test description" "tests/NN-test-name.sh"
 
 ### Conventions
 
-- **Test numbering**: Sequential, grouped by when they were added (01-22 original, 23-29 Fedify 2.0 high priority, 30-38 medium priority, 39-44 low priority, 45-50 browser.pub/v2.15, 51-55 C2S/Micropub, 56-58 socialweb.coop compliance)
+- **Test numbering**: Sequential, grouped by when they were added (01-22 original, 23-29 Fedify 2.0 high priority, 30-38 medium priority, 39-44 low priority, 45-50 browser.pub/v2.15, 51-55 C2S/Micropub, 56-61 socialweb.coop compliance)
 - **SKIP vs FAIL**: Use SKIP for optional features (e.g., `alsoKnownAs` not configured). Use FAIL for required federation features.
 - **Auth-aware assertions**: Some endpoints redirect to login (302) instead of returning 404 when Indiekit auth middleware catches the request. Tests accept both where appropriate.
 - **Large string handling**: Never use `echo "$var" | grep` — use `grep ... <<< "$var"` or `jq ... <<< "$var"` to avoid silent failures with multi-MB strings.
