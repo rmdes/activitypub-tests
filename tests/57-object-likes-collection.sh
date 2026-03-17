@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 52-object-likes-collection.sh — Verify per-object likes collection type
+# 57-object-likes-collection.sh — Verify per-object likes collection type
 # Maps to socialweb.coop test UUID 200b9bc8-aae3-46f2-a6ab-5366042c0f6e
 #
 # AP §5.7: "Every object MAY have a likes collection."

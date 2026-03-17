@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 53-object-shares-collection.sh — Verify per-object shares collection type
+# 58-object-shares-collection.sh — Verify per-object shares collection type
 # Maps to socialweb.coop test UUID b03a5245-1072-426d-91b3-a3d412d45ae8
 #
 # AP §5.8: "Every object MAY have a shares collection."

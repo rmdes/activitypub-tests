@@ -2,7 +2,7 @@
 
 ## What This Repo Is
 
-A black-box test suite (53 bash scripts) that validates ActivityPub federation compliance against a live server. Tests use `curl`, `jq`, and the Fedify CLI — no application code, no unit tests, no build step.
+A black-box test suite (58 bash scripts) that validates ActivityPub federation compliance against a live server. Tests use `curl`, `jq`, and the Fedify CLI — no application code, no unit tests, no build step. C2S tests (51-55) additionally require a Micropub token from [indiekit-mcp-micropub](https://github.com/rmdes/indiekit-mcp-micropub).
 
 The target server is `@rmdes/indiekit-endpoint-activitypub` running on Indiekit, but the tests are protocol-generic.
 
@@ -16,14 +16,17 @@ activitypub-tests/
                           # and assertion helpers (assert_contains, assert_eq, etc.)
     01-webfinger.sh       # Individual test scripts, numbered sequentially
     ...
-    53-object-shares-collection.sh
+    55-c2s-update-reflects.sh
+    56-inbox-orderedcollection.sh
+    ...
+    58-object-shares-collection.sh
   reports/                # Generated compliance reports (gitignored)
 ```
 
 ## Running Tests
 
 ```bash
-# All 53 tests against the default target (rmendes.net)
+# All 58 tests against the default target (rmendes.net)
 ./run-all.sh
 
 # Single test
@@ -33,19 +36,20 @@ activitypub-tests/
 DOMAIN=example.com HANDLE=alice ./run-all.sh
 ```
 
-## Test Categories (53 tests)
+## Test Categories (58 tests)
 
 | Category | Count | Tests | What they validate |
 |----------|-------|-------|-------------------|
 | Discovery | 8 | 01, 02, 22, 23, 35, 37, 42, 47 | WebFinger resolution + subscribe template + errors + avatar, NodeInfo chain + version + content types |
 | Actor | 13 | 03, 04, 19, 24, 25, 30-33, 38, 41, 45, 46 | Fedify lookup, required fields, JSON structure, attachments, multi-key, bio, alsoKnownAs, manuallyApprovesFollowers, icon/image, 404, ld+json Accept, sharedInbox endpoints, published date |
-| Collections | 16 | 05-08, 13-15, 20, 34, 43, 44, 48, 49, 51-53 | Outbox/followers/following/liked/featured/featuredTags as OrderedCollection with JSON type verification, pagination, actor attribution, Hashtag structure, Create structure, inbox OrderedCollection, per-object likes/shares collections |
+| Collections | 16 | 05-08, 13-15, 20, 34, 43, 44, 48, 49, 56-58 | Outbox/followers/following/liked/featured/featuredTags as OrderedCollection with JSON type verification, pagination, actor attribution, Hashtag structure, Create structure, inbox OrderedCollection (socialweb.coop), per-object likes/shares collections |
 | Content Negotiation | 4 | 09, 10, 17, 40 | AS2 JSON for AP clients, HTML for browsers, object dereferencing, root redirect |
 | Inbox | 4 | 11, 12, 36, 39 | GET rejection (405), unsigned POST rejection (401), Allow/Content-Type headers |
 | Instance & Aliases | 2 | 16, 18 | Instance actor (Application type), WebFinger alias resolution |
 | HTTP Protocol | 2 | 21, 29 | Content-Type headers, Vary: Accept, CORS on WebFinger |
 | JSON-LD | 1 | 50 | Context namespace verification |
-| Endpoints | 3 | 26, 27, 28 | Authorize interaction (remote follow), public profile (HTML), quick replies 404 |
+| Endpoints | 3 | 26, 27, 28 | Authorize interaction (remote follow), public profile (HTML), compose auth redirect |
+| C2S (Micropub → AP) | 5 | 51-55 | Micropub create/update/delete → AP outbox verification, AS2 dereference, activity structure (requires MCP micropub token) |
 
 ## Critical Conventions
 
@@ -84,7 +88,8 @@ Sequential by addition order, not by category:
 - **30-38**: Medium-priority (actor fields, pagination, NodeInfo version, inbox security, error handling)
 - **39-44**: Low-priority (405 headers, content negotiation, ld+json, NodeInfo content types, outbox attribution, featured tags structure)
 - **45-50**: v2.15.0 coverage (actor endpoints, published date, WebFinger avatar, outbox Create structure, followers fields, JSON-LD context)
-- **51-53**: socialweb.coop compliance (inbox OrderedCollection, per-object likes collection, per-object shares collection)
+- **51-55**: C2S / Micropub → AP pipeline (create note, post dereference, outbox activity structure, delete, update) — requires MCP micropub token
+- **56-58**: socialweb.coop compliance (inbox OrderedCollection, per-object likes collection, per-object shares collection)
 
 ## Adding New Tests
 
@@ -133,8 +138,19 @@ Sequential by addition order, not by category:
 
 `run-all.sh` generates a Markdown report in `reports/` (gitignored) with category summary, detailed results, a Fedify Feature Compliance Matrix, and an overall grade (A+ through D). The report categories must match the `for cat in ...` loop — update both when adding categories.
 
+## C2S Test Dependencies
+
+Tests 51-55 exercise the full Micropub → MongoDB → AP syndicator → outbox pipeline. They require:
+
+1. **MCP Micropub token** — An IndieAuth token stored at `~/.config/micropub-mcp/${DOMAIN}.json` by the [indiekit-mcp-micropub](https://github.com/rmdes/indiekit-mcp-micropub) MCP server
+2. **`syndicate_to` in Micropub requests** — Posts MUST include `mp-syndicate-to: ["https://${DOMAIN}/"]` to reach ActivityPub. Without it, posts exist only in MongoDB and never appear in the AP outbox, even when the syndicator has `checked: true`
+3. **`common-micropub.sh`** — Shared helper sourced by C2S tests. Provides `micropub_create`, `micropub_delete`, `micropub_update_content`, `wait_for_syndication`, and `outbox_find_by_slug`
+
+If no token file exists, C2S tests SKIP gracefully (exit 0).
+
 ## Related Repositories
 
 - **Target implementation**: `/home/rick/code/indiekit-dev/indiekit-endpoint-activitypub/` — the Fedify 2.0 ActivityPub plugin
+- **MCP Micropub**: `/home/rick/code/indiekit-dev/indiekit-mcp-micropub/` ([GitHub](https://github.com/rmdes/indiekit-mcp-micropub)) — MCP server providing Micropub auth + CRUD, required for C2S tests (51-55)
 - **Deployment**: `/home/rick/code/indiekit-dev/indiekit-cloudron/` — Cloudron packaging that deploys the plugin
 - **Parent workspace**: `/home/rick/code/indiekit-dev/CLAUDE.md` — full repository map

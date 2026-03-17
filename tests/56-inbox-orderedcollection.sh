@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 51-inbox-orderedcollection.sh — Verify inbox identifies as OrderedCollection
+# 56-inbox-orderedcollection.sh — Verify inbox identifies as OrderedCollection
 # Maps to socialweb.coop test UUID 5e94d155-ed4a-4d71-b797-d7c387736ecf
 #
 # AP §5.2: "The inbox MUST be an OrderedCollection."
