@@ -18,17 +18,16 @@ fi
 # Wait for syndication
 wait_for_syndication 6
 
-# Get outbox first page
-outbox_json=$(curl -s -H "Accept: application/activity+json" "${ACTOR_URL}/outbox")
-first_page=$(jq -r '.first // empty' <<< "$outbox_json")
+# Search outbox (multiple pages — pagination may not be chronological)
+page_json=$(outbox_search_pages "$TEST_SLUG" 3)
 
-if [[ -n "$first_page" && "$first_page" == "http"* ]]; then
-  page_json=$(curl -s -H "Accept: application/activity+json" "$first_page")
-else
-  page_json="$outbox_json"
+if [[ -z "$page_json" ]]; then
+  micropub_delete "$post_url" 2>/dev/null || true
+  echo "ASSERT FAILED: Test activity not found in outbox (slug: ${TEST_SLUG})"
+  exit 1
 fi
 
-# Find our test activity
+# Find our test activity on the matching page
 activity=$(outbox_get_activity_by_slug "$page_json" "$TEST_SLUG")
 
 if [[ -z "$activity" || "$activity" == "null" ]]; then
@@ -62,8 +61,9 @@ assert_eq "$has_to" "true" \
   "Create activity or object should have to field"
 
 # Check public addressing includes AS public collection
-to_json=$(jq -c '.to // .object.to // []' <<< "$activity")
-assert_contains "$to_json" "https://www.w3.org/ns/activitystreams#Public" \
+# Both expanded URI and compacted "as:Public" are valid per AP spec
+to_json=$(jq -c '[.to, .object.to] | flatten' <<< "$activity")
+assert_match "$to_json" "(https://www.w3.org/ns/activitystreams#Public|as:Public)" \
   "Public post should address AS2 Public collection"
 
 # Clean up

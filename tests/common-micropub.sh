@@ -134,6 +134,60 @@ wait_for_syndication() {
   sleep "$seconds"
 }
 
+# ap_fetch <url>
+# Fetch an AP resource with cache-busting to bypass nginx proxy_cache.
+# The Cloudron deployment caches AP responses for 10 minutes — C2S tests
+# need uncached responses to verify create/update/delete immediately.
+ap_fetch() {
+  local url="$1"
+  local sep="?"
+  [[ "$url" == *"?"* ]] && sep="&"
+  curl -s -H "Accept: application/activity+json" "${url}${sep}_=$(date +%s%N)"
+}
+
+# ap_status <url>
+# Like ap_fetch but returns only the HTTP status code.
+ap_status() {
+  local url="$1"
+  local sep="?"
+  [[ "$url" == *"?"* ]] && sep="&"
+  curl -s -o /dev/null -w "%{http_code}" -H "Accept: application/activity+json" "${url}${sep}_=$(date +%s%N)"
+}
+
+# outbox_search_pages <slug> [max_pages]
+# Searches multiple outbox pages for an activity matching the slug.
+# Returns the page JSON of the first page containing a match, or empty.
+# Follows the `next` link from each page response (cursor is a document
+# offset, not a page number — e.g. cursor=0, cursor=20, cursor=40).
+#
+# NOTE: Appends a cache-busting param (_=<epoch>) to bypass nginx's
+# proxy_cache (10 min TTL). Without this, newly-created posts won't
+# appear in the outbox during tests.
+outbox_search_pages() {
+  local slug="$1"
+  local max_pages="${2:-3}"
+  local cache_bust="_=$(date +%s%N)"
+
+  local outbox_json next_url
+  outbox_json=$(curl -s -H "Accept: application/activity+json" "${ACTOR_URL}/outbox?${cache_bust}")
+  next_url=$(jq -r '.first // empty' <<< "$outbox_json")
+
+  local page=0 page_json found
+  while [[ $page -lt $max_pages && -n "$next_url" && "$next_url" == "http"* ]]; do
+    # Append cache-bust param (next_url already has ?cursor=N)
+    page_json=$(curl -s -H "Accept: application/activity+json" "${next_url}&${cache_bust}")
+    found=$(outbox_find_by_slug "$page_json" "$slug")
+    if [[ "$found" -gt 0 ]]; then
+      echo "$page_json"
+      return
+    fi
+    next_url=$(jq -r '.next // empty' <<< "$page_json")
+    page=$((page + 1))
+  done
+
+  echo ""
+}
+
 # outbox_find_by_slug <page_json> <slug>
 # Finds an activity in the outbox page matching the slug.
 # Handles both inline objects and string-URL objects.

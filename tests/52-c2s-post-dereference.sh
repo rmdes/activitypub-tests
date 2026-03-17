@@ -18,9 +18,9 @@ fi
 # Wait for syndication
 wait_for_syndication 6
 
-# Dereference the post URL with AS2 Accept header
-as2_json=$(curl -s -H "Accept: application/activity+json" "$post_url")
-as2_status=$(curl -s -o /dev/null -w "%{http_code}" -H "Accept: application/activity+json" "$post_url")
+# Dereference the post URL with AS2 Accept header (cache-busted)
+as2_json=$(ap_fetch "$post_url")
+as2_status=$(ap_status "$post_url")
 
 # Should return 200 with AS2 content
 assert_eq "$as2_status" "200" \

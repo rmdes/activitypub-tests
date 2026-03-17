@@ -18,21 +18,14 @@ fi
 # Wait for syndication to process
 wait_for_syndication 6
 
-# Verify the post is in the outbox
-outbox_json=$(curl -s -H "Accept: application/activity+json" "${ACTOR_URL}/outbox")
-first_page=$(jq -r '.first // empty' <<< "$outbox_json")
+# Verify the post is in the outbox (search multiple pages — pagination may not be chronological)
+page_json=$(outbox_search_pages "$TEST_SLUG" 3)
 
-if [[ -n "$first_page" && "$first_page" == "http"* ]]; then
-  page_json=$(curl -s -H "Accept: application/activity+json" "$first_page")
-else
-  page_json="$outbox_json"
+if [[ -z "$page_json" ]]; then
+  micropub_delete "$post_url" 2>/dev/null || true
+  echo "ASSERT FAILED: Test post should appear in outbox (slug: ${TEST_SLUG})"
+  exit 1
 fi
-
-# Check that our test post appears (search by slug in object URLs or content)
-found=$(outbox_find_by_slug "$page_json" "$TEST_SLUG")
-
-assert_match "$found" "^[1-9]" \
-  "Test post should appear in outbox (slug: ${TEST_SLUG})"
 
 # Clean up — delete the test post
 micropub_delete "$post_url" 2>/dev/null || true

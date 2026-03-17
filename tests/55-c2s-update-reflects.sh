@@ -19,8 +19,8 @@ fi
 # Wait for syndication
 wait_for_syndication 6
 
-# Verify original content via AS2
-original_json=$(curl -s -H "Accept: application/activity+json" "$post_url")
+# Verify original content via AS2 (cache-busted)
+original_json=$(ap_fetch "$post_url")
 original_as2_content=$(jq -r '.content // ""' <<< "$original_json")
 assert_contains "$original_as2_content" "ORIGINAL" \
   "Original AS2 content should contain ORIGINAL"
@@ -31,8 +31,8 @@ micropub_update_content "$post_url" "$UPDATED_CONTENT"
 # Wait for update to propagate
 wait_for_syndication 4
 
-# Verify updated content via AS2
-updated_json=$(curl -s -H "Accept: application/activity+json" "$post_url")
+# Verify updated content via AS2 (cache-busted to bypass nginx proxy_cache)
+updated_json=$(ap_fetch "$post_url")
 updated_as2_content=$(jq -r '.content // ""' <<< "$updated_json")
 assert_contains "$updated_as2_content" "UPDATED" \
   "Updated AS2 content should contain UPDATED"

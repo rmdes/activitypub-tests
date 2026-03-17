@@ -18,9 +18,8 @@ fi
 # Wait for syndication
 wait_for_syndication 6
 
-# Verify it exists first (AS2 dereference should work)
-pre_status=$(curl -s -o /dev/null -w "%{http_code}" \
-  -H "Accept: application/activity+json" "$post_url")
+# Verify it exists first (AS2 dereference should work, cache-busted)
+pre_status=$(ap_status "$post_url")
 assert_eq "$pre_status" "200" \
   "Post should exist before delete (got ${pre_status})"
 
@@ -31,8 +30,8 @@ micropub_delete "$post_url"
 wait_for_syndication 3
 
 # Verify the post is gone — should return 404 or 410 (Gone)
-post_status=$(curl -s -o /dev/null -w "%{http_code}" \
-  -H "Accept: application/activity+json" "$post_url")
+# Must cache-bust to bypass nginx proxy_cache (10 min TTL)
+post_status=$(ap_status "$post_url")
 assert_match "$post_status" "^(302|404|410)$" \
   "Deleted post should return 404/410/302 (got ${post_status})"
 
