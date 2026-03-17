@@ -171,7 +171,7 @@ run_test "JSON-LD" "Context namespaces"                    "tests/50-context-jso
 section "Endpoints"
 run_test "Endpoints" "Authorize interaction"               "tests/26-authorize-interaction.sh"
 run_test "Endpoints" "Public profile page"                 "tests/27-public-profile.sh"
-run_test "Endpoints" "Quick replies 404"                   "tests/28-quick-replies-404.sh"
+run_test "Endpoints" "Compose auth redirect"                "tests/28-quick-replies-404.sh"
 
 # ====================================================================
 # TERMINAL SUMMARY

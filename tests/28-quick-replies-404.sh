@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
-# 28-quick-replies-404.sh — Verify quick-replies endpoint returns 404 for non-existent notes
-# Remote servers dereference Note IDs during Create activity verification.
+# 28-compose-auth-redirect.sh — Verify compose endpoint redirects unauthenticated requests
+# The old quick-replies endpoint was replaced by /admin/reader/compose (Micropub-based).
+# Since it's behind IndieAuth, unauthenticated requests should redirect to login (302).
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
 
-# Non-existent note should return 404
+# Compose endpoint should redirect to login (not 404 or 500)
 status=$(curl -s -o /dev/null -w "%{http_code}" \
-  -H "Accept: application/activity+json" \
-  "${BASE_URL}${MOUNT_PATH}/quick-replies/nonexistent-id-12345")
-assert_eq "$status" "404" \
-  "Quick replies for non-existent ID should return 404 (got ${status})"
+  "${BASE_URL}${MOUNT_PATH}/admin/reader/compose")
+assert_match "$status" "^(302|303)$" \
+  "Compose endpoint should redirect unauthenticated requests (got ${status})"
 
-echo "Quick replies OK: 404 for non-existent notes"
+# Compose with replyTo param should also redirect (not crash)
+status=$(curl -s -o /dev/null -w "%{http_code}" \
+  "${BASE_URL}${MOUNT_PATH}/admin/reader/compose?replyTo=https://example.com/note/123")
+assert_match "$status" "^(302|303)$" \
+  "Compose with replyTo should redirect unauthenticated requests (got ${status})"
+
+echo "Compose auth redirect OK: unauthenticated requests properly redirected to login"
