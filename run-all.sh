@@ -5,6 +5,7 @@
 #   ./run-all.sh                  # Run all tests, generate report
 #   ./run-all.sh --verbose        # Show full output even on pass
 #   ./run-all.sh --report-only    # Only print the report path (skip terminal output)
+#   ./run-all.sh --skip-c2s       # Skip C2S tests (avoids creating posts that syndicate)
 #   DOMAIN=other.site ./run-all.sh  # Test a different domain
 
 set -euo pipefail
@@ -12,7 +13,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DOMAIN="${DOMAIN:-rmendes.net}"
 HANDLE="${HANDLE:-rick}"
-VERBOSE="${1:-}"
+
+# Parse flags
+VERBOSE=""
+SKIP_C2S=false
+for arg in "$@"; do
+  case "$arg" in
+    --verbose) VERBOSE="--verbose" ;;
+    --report-only) VERBOSE="--report-only" ;;
+    --skip-c2s) SKIP_C2S=true ;;
+  esac
+done
 
 # ---- Result tracking ----
 PASS=0
@@ -173,12 +184,19 @@ run_test "Endpoints" "Authorize interaction"               "tests/26-authorize-i
 run_test "Endpoints" "Public profile page"                 "tests/27-public-profile.sh"
 run_test "Endpoints" "Compose auth redirect"                "tests/28-quick-replies-404.sh"
 
-section "Client-to-Server (Micropub → AP)"
-run_test "C2S" "Create note appears in outbox"          "tests/51-c2s-create-note.sh"
-run_test "C2S" "Post dereferenceable as AS2"            "tests/52-c2s-post-dereference.sh"
-run_test "C2S" "Outbox Create activity structure"       "tests/53-c2s-outbox-activity-structure.sh"
-run_test "C2S" "Delete removes post from AP"            "tests/54-c2s-delete-removes-post.sh"
-run_test "C2S" "Update reflects in AS2"                 "tests/55-c2s-update-reflects.sh"
+if [[ "$SKIP_C2S" == "false" ]]; then
+  section "Client-to-Server (Micropub → AP)"
+  run_test "C2S" "Create note appears in outbox"          "tests/51-c2s-create-note.sh"
+  run_test "C2S" "Post dereferenceable as AS2"            "tests/52-c2s-post-dereference.sh"
+  run_test "C2S" "Outbox Create activity structure"       "tests/53-c2s-outbox-activity-structure.sh"
+  run_test "C2S" "Delete removes post from AP"            "tests/54-c2s-delete-removes-post.sh"
+  run_test "C2S" "Update reflects in AS2"                 "tests/55-c2s-update-reflects.sh"
+else
+  if [[ "$VERBOSE" != "--report-only" ]]; then
+    echo ""
+    echo "--- Client-to-Server (Micropub → AP) [SKIPPED via --skip-c2s] ---"
+  fi
+fi
 
 # ====================================================================
 # TERMINAL SUMMARY
