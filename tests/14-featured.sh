@@ -17,5 +17,5 @@ assert_json_eq "$json" '.type' 'OrderedCollection' \
 assert_json_field "$json" '.id' \
   "Featured JSON should have an id"
 
-total=$(echo "$json" | jq -r '.totalItems // 0')
+total=$(jq -r '.totalItems // 0' <<< "$json")
 echo "Featured OK: OrderedCollection with ${total} pinned items"

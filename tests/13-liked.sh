@@ -22,5 +22,5 @@ assert_json_eq "$json" '.type' 'OrderedCollection' \
 assert_json_field "$json" '.totalItems' \
   "Liked JSON should have totalItems"
 
-total=$(echo "$json" | jq -r '.totalItems')
+total=$(jq -r '.totalItems' <<< "$json")
 echo "Liked OK: OrderedCollection with ${total} items"

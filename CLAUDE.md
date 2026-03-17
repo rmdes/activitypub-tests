@@ -2,7 +2,7 @@
 
 ## What This Repo Is
 
-A black-box test suite (44 bash scripts) that validates ActivityPub federation compliance against a live server. Tests use `curl`, `jq`, and the Fedify CLI — no application code, no unit tests, no build step.
+A black-box test suite (53 bash scripts) that validates ActivityPub federation compliance against a live server. Tests use `curl`, `jq`, and the Fedify CLI — no application code, no unit tests, no build step.
 
 The target server is `@rmdes/indiekit-endpoint-activitypub` running on Indiekit, but the tests are protocol-generic.
 
@@ -16,14 +16,14 @@ activitypub-tests/
                           # and assertion helpers (assert_contains, assert_eq, etc.)
     01-webfinger.sh       # Individual test scripts, numbered sequentially
     ...
-    44-featured-tags-structure.sh
+    53-object-shares-collection.sh
   reports/                # Generated compliance reports (gitignored)
 ```
 
 ## Running Tests
 
 ```bash
-# All 44 tests against the default target (rmendes.net)
+# All 53 tests against the default target (rmendes.net)
 ./run-all.sh
 
 # Single test
@@ -33,17 +33,18 @@ activitypub-tests/
 DOMAIN=example.com HANDLE=alice ./run-all.sh
 ```
 
-## Test Categories (44 tests)
+## Test Categories (53 tests)
 
 | Category | Count | Tests | What they validate |
 |----------|-------|-------|-------------------|
-| Discovery | 7 | 01, 02, 22, 23, 35, 37, 42 | WebFinger resolution + subscribe template + errors, NodeInfo chain + version + content types |
-| Actor | 11 | 03, 04, 19, 24, 25, 30-33, 38, 41 | Fedify lookup, required fields, JSON structure, attachments array, RSA+Ed25519 multi-key, bio, alsoKnownAs, manuallyApprovesFollowers, icon/image, 404 handling, ld+json Accept |
-| Collections | 11 | 05-08, 13-15, 20, 34, 43, 44 | Outbox/followers/following/liked/featured/featuredTags as OrderedCollection, pagination, actor attribution, Hashtag structure |
+| Discovery | 8 | 01, 02, 22, 23, 35, 37, 42, 47 | WebFinger resolution + subscribe template + errors + avatar, NodeInfo chain + version + content types |
+| Actor | 13 | 03, 04, 19, 24, 25, 30-33, 38, 41, 45, 46 | Fedify lookup, required fields, JSON structure, attachments, multi-key, bio, alsoKnownAs, manuallyApprovesFollowers, icon/image, 404, ld+json Accept, sharedInbox endpoints, published date |
+| Collections | 16 | 05-08, 13-15, 20, 34, 43, 44, 48, 49, 51-53 | Outbox/followers/following/liked/featured/featuredTags as OrderedCollection with JSON type verification, pagination, actor attribution, Hashtag structure, Create structure, inbox OrderedCollection, per-object likes/shares collections |
 | Content Negotiation | 4 | 09, 10, 17, 40 | AS2 JSON for AP clients, HTML for browsers, object dereferencing, root redirect |
 | Inbox | 4 | 11, 12, 36, 39 | GET rejection (405), unsigned POST rejection (401), Allow/Content-Type headers |
 | Instance & Aliases | 2 | 16, 18 | Instance actor (Application type), WebFinger alias resolution |
 | HTTP Protocol | 2 | 21, 29 | Content-Type headers, Vary: Accept, CORS on WebFinger |
+| JSON-LD | 1 | 50 | Context namespace verification |
 | Endpoints | 3 | 26, 27, 28 | Authorize interaction (remote follow), public profile (HTML), quick replies 404 |
 
 ## Critical Conventions
@@ -82,6 +83,8 @@ Sequential by addition order, not by category:
 - **23-29**: Fedify 2.0 high-priority coverage (subscribe template, multi-key, attachments, authorize interaction, public profile, CORS)
 - **30-38**: Medium-priority (actor fields, pagination, NodeInfo version, inbox security, error handling)
 - **39-44**: Low-priority (405 headers, content negotiation, ld+json, NodeInfo content types, outbox attribution, featured tags structure)
+- **45-50**: v2.15.0 coverage (actor endpoints, published date, WebFinger avatar, outbox Create structure, followers fields, JSON-LD context)
+- **51-53**: socialweb.coop compliance (inbox OrderedCollection, per-object likes collection, per-object shares collection)
 
 ## Adding New Tests
 

@@ -14,5 +14,16 @@ assert_match "$output" "totalItems: [0-9]+" \
 assert_contains "$output" "first:" \
   "Followers should have a first page link"
 
-total=$(grep -o 'totalItems: [0-9]*' <<< "$output" | grep -o '[0-9]*')
-echo "Followers OK: OrderedCollection with ${total} items"
+# Verify raw JSON type per socialweb.coop test (UUID 018c3e08)
+json=$(curl -s -H "Accept: application/activity+json" "${ACTOR_URL}/followers")
+assert_json_field "$json" '.type' \
+  "Followers JSON should have a type"
+type=$(jq -r '.type' <<< "$json")
+assert_match "$type" "^(OrderedCollection|Collection)$" \
+  "Followers type MUST be OrderedCollection or Collection (AP §5.3), got: $type"
+
+assert_json_field "$json" '.id' \
+  "Followers JSON should have an id"
+
+total=$(jq -r '.totalItems // 0' <<< "$json")
+echo "Followers OK: ${type} with ${total} items"

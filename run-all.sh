@@ -141,6 +141,9 @@ run_test "Collections" "Outbox traversal (first page)"     "tests/08-outbox-trav
 run_test "Collections" "Outbox actor attribution"          "tests/43-outbox-actor-attribution.sh"
 run_test "Collections" "Outbox Create structure"           "tests/48-outbox-create-structure.sh"
 run_test "Collections" "Followers collection fields"       "tests/49-followers-fields.sh"
+run_test "Collections" "Inbox OrderedCollection type"      "tests/51-inbox-orderedcollection.sh"
+run_test "Collections" "Object likes collection"           "tests/52-object-likes-collection.sh"
+run_test "Collections" "Object shares collection"          "tests/53-object-shares-collection.sh"
 
 section "Content Negotiation"
 run_test "Content" "Post returns AS2 JSON"                 "tests/09-content-negotiation.sh"

@@ -10,7 +10,7 @@ assert_json_field "$json" '.["@context"]' \
   "Actor JSON should have @context"
 
 # Type
-type=$(echo "$json" | jq -r '.type')
+type=$(jq -r '.type' <<< "$json")
 assert_match "$type" "^(Person|Service|Organization|Group)$" \
   "Actor type should be a valid actor type (got: $type)"
 
