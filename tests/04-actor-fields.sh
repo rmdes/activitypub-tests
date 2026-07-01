@@ -41,8 +41,8 @@ assert_contains "$output" "featuredTags:" \
   "Actor should have a featured tags collection link"
 
 # Crypto keys
-assert_contains "$output" "assertionMethods:" \
-  "Actor should have assertionMethods (multi-key support)"
+assert_contains "$output" "assertionMethod:" \
+  "Actor should have assertionMethod (multi-key support)"
 
 # Optional but important fields
 assert_contains "$output" "name:" \
@@ -57,4 +57,4 @@ assert_contains "$output" "icon:" \
 assert_contains "$output" "published:" \
   "Actor should have a published date"
 
-echo "Actor fields OK: inbox, outbox, followers, following, liked, featured, featuredTags, publicKey, assertionMethods, sharedInbox, name, icon, published"
+echo "Actor fields OK: inbox, outbox, followers, following, liked, featured, featuredTags, publicKey, assertionMethod, sharedInbox, name, icon, published"
