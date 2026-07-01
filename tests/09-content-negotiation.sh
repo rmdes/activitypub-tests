@@ -11,7 +11,12 @@ fedify lookup --traverse --suppress-errors "${ACTOR_URL}/outbox" > "$tmpfile" 2>
 outbox=$(head -600 "$tmpfile")
 
 # Extract the first Note/Article URL from outbox (format: url: URL "https://...")
-post_url=$(grep -o 'url: URL "[^"]*"' <<< "$outbox" | head -1 | sed 's/url: URL "//;s/"$//')
+# Skip media/attachment URLs (photo posts expose the image url first) — we want
+# the post's own URL, which content negotiation converts to AS2.
+post_url=$(grep -o 'url: URL "[^"]*"' <<< "$outbox" \
+  | sed 's/url: URL "//;s/"$//' \
+  | grep -vE '/media/|\.(png|jpe?g|gif|webp|mp4|mp3|pdf)($|\?)' \
+  | head -1)
 
 if [[ -z "$post_url" ]]; then
   echo "SKIP: Could not find a post URL in outbox"
